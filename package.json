@@ -1,0 +1,35 @@
+{
+  "name": "devconnect",
+  "version": "1.0.0",
+  "description": "A collaborative development platform for teams",
+  "main": "index.js",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=backend\" \"npm run start --workspace=frontend\"",
+    "build": "npm run build --workspace=frontend",
+    "test": "npm run test --workspace=backend && npm run test --workspace=frontend",
+    "lint": "npm run lint --workspace=backend && npm run lint --workspace=frontend",
+    "docker:dev": "docker-compose up",
+    "docker:build": "docker-compose build",
+    "install:all": "npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  },
+  "keywords": [
+    "collaboration",
+    "development",
+    "project-management",
+    "real-time",
+    "graphql"
+  ],
+  "author": "DevConnect Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Marvellousabio/devconnect.git"
+  }
+}

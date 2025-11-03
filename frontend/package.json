@@ -1,0 +1,54 @@
+{
+  "name": "devconnect-frontend",
+  "version": "1.0.0",
+  "description": "Frontend React application for DevConnect platform",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "lint": "eslint src/**/*.js",
+    "lint:fix": "eslint src/**/*.js --fix"
+  },
+  "dependencies": {
+    "@apollo/client": "^3.8.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.14.2",
+    "react-scripts": "5.0.1",
+    "socket.io-client": "^4.7.2",
+    "@mui/material": "^5.14.2",
+    "@mui/icons-material": "^5.14.2",
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.1",
+    "graphql": "^16.8.1",
+    "jwt-decode": "^4.0.0",
+    "react-beautiful-dnd": "^13.1.1",
+    "react-markdown": "^9.0.1",
+    "react-syntax-highlighter": "^15.5.0",
+    "date-fns": "^2.30.0",
+    "axios": "^1.5.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^5.16.5",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "eslint": "^8.49.0",
+    "@typescript-eslint/eslint-plugin": "^6.7.0",
+    "@typescript-eslint/parser": "^6.7.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "proxy": "http://localhost:4000"
+}
