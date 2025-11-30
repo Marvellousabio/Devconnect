@@ -3,7 +3,6 @@ import { io } from 'socket.io-client';
 class SocketService {
   constructor() {
     this.socket = null;
-    this.isConnected = false;
     this.messageHandlers = new Map();
     this.roomMessageHandlers = new Map();
   }
@@ -24,7 +23,6 @@ class SocketService {
 
     this.socket.on('connect', () => {
       console.log('Connected to socket server');
-      this.isConnected = true;
 
       // Rejoin user room
       this.socket.emit('join', userId);
@@ -32,12 +30,10 @@ class SocketService {
 
     this.socket.on('disconnect', () => {
       console.log('Disconnected from socket server');
-      this.isConnected = false;
     });
 
     this.socket.on('connect_error', (error) => {
       console.error('Socket connection error:', error);
-      this.isConnected = false;
     });
 
     // Set up global message handlers
@@ -50,7 +46,6 @@ class SocketService {
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
-      this.isConnected = false;
     }
   }
 

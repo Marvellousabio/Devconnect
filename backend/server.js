@@ -40,7 +40,7 @@ app.use(helmet());
 app.use(compression());
 
 // Rate limiting
-app.use(rateLimit(rateLimitConfig));
+app.use(rateLimitConfig.apiLimiter);
 
 // CORS configuration
 app.use(cors(corsConfig));

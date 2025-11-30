@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, gql } from '@apollo/client';
+import { useQuery, useMutation, gql } from '@apollo/client';
 import {
   Container,
   Typography,
@@ -17,6 +17,13 @@ import {
   Grid,
   Card,
   CardContent,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import {
   People,
@@ -26,6 +33,8 @@ import {
   GitHub,
   Settings,
   Add,
+  Save,
+  Cancel,
 } from '@mui/icons-material';
 import IssueList from '../components/issues/IssueList';
 import KanbanBoard from '../components/boards/KanbanBoard';
@@ -68,20 +77,214 @@ const GET_PROJECT = gql`
   }
 `;
 
+const CREATE_PROJECT = gql`
+  mutation CreateProject($input: ProjectInput!) {
+    createProject(input: $input) {
+      id
+      name
+      description
+      owner {
+        id
+        username
+        firstName
+        lastName
+        avatar
+      }
+      members {
+        user {
+          id
+          username
+          firstName
+          lastName
+          avatar
+        }
+        role
+        joinedAt
+      }
+      status
+      visibility
+      tags
+      githubRepo
+      website
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
 const ProjectDetails = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
   const [selectedRoomId, setSelectedRoomId] = useState(null);
 
+  // Form state for creating new project
+  const [isCreating, setIsCreating] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    visibility: 'private',
+    tags: [],
+    githubRepo: '',
+    website: '',
+  });
+
+  const isNewProject = projectId === 'new';
+
   const { loading, error, data } = useQuery(GET_PROJECT, {
     variables: { id: projectId },
-    skip: !projectId,
+    skip: !projectId || isNewProject,
+  });
+
+  const [createProject, { loading: creating }] = useMutation(CREATE_PROJECT, {
+    onCompleted: (data) => {
+      navigate(`/projects/${data.createProject.id}`);
+    },
+    onError: (error) => {
+      console.error('Error creating project:', error);
+    },
   });
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
+
+  const handleFormChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleCreateProject = async () => {
+    if (!formData.name.trim() || !formData.description.trim()) {
+      return;
+    }
+
+    try {
+      await createProject({
+        variables: {
+          input: {
+            ...formData,
+            tags: formData.tags.filter(tag => tag.trim()),
+          },
+        },
+      });
+    } catch (error) {
+      // Error handled by mutation
+    }
+  };
+
+  const handleCancel = () => {
+    navigate('/dashboard');
+  };
+
+  // Handle create new project
+  if (isNewProject) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Paper sx={{ p: 4 }}>
+          <Typography variant="h4" gutterBottom>
+            Create New Project
+          </Typography>
+
+          <Box component="form" sx={{ mt: 3 }}>
+            <Grid container spacing={3}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Project Name"
+                  value={formData.name}
+                  onChange={(e) => handleFormChange('name', e.target.value)}
+                  required
+                  variant="outlined"
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Visibility</InputLabel>
+                  <Select
+                    value={formData.visibility}
+                    label="Visibility"
+                    onChange={(e) => handleFormChange('visibility', e.target.value)}
+                  >
+                    <MenuItem value="private">Private</MenuItem>
+                    <MenuItem value="public">Public</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Description"
+                  value={formData.description}
+                  onChange={(e) => handleFormChange('description', e.target.value)}
+                  required
+                  multiline
+                  rows={4}
+                  variant="outlined"
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="GitHub Repository URL"
+                  value={formData.githubRepo}
+                  onChange={(e) => handleFormChange('githubRepo', e.target.value)}
+                  variant="outlined"
+                  placeholder="https://github.com/username/repo"
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Website URL"
+                  value={formData.website}
+                  onChange={(e) => handleFormChange('website', e.target.value)}
+                  variant="outlined"
+                  placeholder="https://example.com"
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Tags (comma-separated)"
+                  value={formData.tags.join(', ')}
+                  onChange={(e) => handleFormChange('tags', e.target.value.split(',').map(tag => tag.trim()))}
+                  variant="outlined"
+                  placeholder="react, nodejs, api"
+                />
+              </Grid>
+            </Grid>
+
+            <Box sx={{ mt: 4, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+              <Button
+                variant="outlined"
+                startIcon={<Cancel />}
+                onClick={handleCancel}
+                disabled={creating}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<Save />}
+                onClick={handleCreateProject}
+                disabled={creating || !formData.name.trim() || !formData.description.trim()}
+              >
+                {creating ? 'Creating...' : 'Create Project'}
+              </Button>
+            </Box>
+          </Box>
+        </Paper>
+      </Container>
+    );
+  }
 
   if (loading) {
     return (

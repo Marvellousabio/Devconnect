@@ -1,6 +1,11 @@
 const { ApolloServer } = require('apollo-server-express');
 const { makeExecutableSchema } = require('@graphql-tools/schema');
 const { mergeTypeDefs, mergeResolvers } = require('@graphql-tools/merge');
+const jwt = require('jsonwebtoken');
+
+// Import configurations and models
+const { authConfig } = require('../config');
+const { User } = require('../models');
 
 // Import type definitions
 const commonTypeDefs = require('./types/common');
@@ -53,11 +58,40 @@ const schema = makeExecutableSchema({
 // Create Apollo Server instance
 const graphqlServer = new ApolloServer({
   schema,
-  context: ({ req, res }) => ({
-    req,
-    res,
-    user: req.user // From auth middleware
-  }),
+  context: async ({ req, res }) => {
+    let user = null;
+
+    try {
+      const authHeader = req.headers.authorization;
+      const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+      console.log('GraphQL Context - Auth header present:', !!authHeader);
+      console.log('GraphQL Context - Token present:', !!token);
+
+      if (token) {
+        const decoded = jwt.verify(token, authConfig.jwtSecret);
+        console.log('GraphQL Context - Token decoded userId:', decoded.userId);
+
+        user = await User.findById(decoded.userId).select('-password');
+        console.log('GraphQL Context - User found:', !!user);
+
+        if (user && !user.isActive) {
+          console.log('GraphQL Context - User not active');
+          user = null;
+        }
+      } else {
+        console.log('GraphQL Context - No token provided');
+      }
+    } catch (error) {
+      console.error('GraphQL Context - Auth error:', error.message);
+    }
+
+    return {
+      req,
+      res,
+      user
+    };
+  },
   introspection: process.env.NODE_ENV !== 'production',
   playground: process.env.NODE_ENV !== 'production',
   formatError: (error) => {
