@@ -52,12 +52,6 @@ const projectBoardSchema = new mongoose.Schema({
 // Indexes for better query performance
 projectBoardSchema.index({ project: 1 });
 
-// Virtual for total cards count
-projectBoardSchema.virtual('totalCards').get(async function() {
-  const BoardCard = mongoose.model('BoardCard');
-  const cards = await BoardCard.find({ board: this._id });
-  return cards.length;
-});
 
 // Pre-save middleware to ensure unique column positions
 projectBoardSchema.pre('save', function(next) {
@@ -107,7 +101,7 @@ projectBoardSchema.methods.updateColumn = function(columnId, updates) {
 };
 
 // Instance method to remove column
-projectBoardSchema.methods.removeColumn = function(columnId) {
+projectBoardSchema.methods.removeColumn = async function(columnId) {
   const columnIndex = this.columns.findIndex(col => col._id.toString() === columnId);
   if (columnIndex === -1) {
     throw new Error('Column not found');

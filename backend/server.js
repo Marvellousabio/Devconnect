@@ -8,6 +8,10 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
+
+// Trust proxy for accurate IP detection (set to 1 for single proxy level)
+app.set('trust proxy', 1);
+
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
@@ -50,32 +54,37 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Apply GraphQL middleware
-graphqlServer.applyMiddleware({ app, path: '/graphql' });
+// Start Apollo Server and apply middleware
+async function startServer() {
+  await graphqlServer.start();
+  graphqlServer.applyMiddleware({ app, path: '/graphql' });
 
-// Socket.io connection handling
-socketHandlers(io);
+  // Socket.io connection handling
+  socketHandlers(io);
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    error: 'Something went wrong!',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+  // Error handling middleware
+  app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({
+      error: 'Something went wrong!',
+      message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   });
-});
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
+  // 404 handler
+  app.use('*', (req, res) => {
+    res.status(404).json({ error: 'Route not found' });
+  });
 
-const PORT = process.env.PORT || 4000;
+  const PORT = process.env.PORT || 4000;
 
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 GraphQL endpoint: http://localhost:${PORT}/graphql`);
-  console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+  server.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📊 GraphQL endpoint: http://localhost:${PORT}/graphql`);
+    console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+}
+
+startServer().catch(console.error);
 
 module.exports = { app, server, io };

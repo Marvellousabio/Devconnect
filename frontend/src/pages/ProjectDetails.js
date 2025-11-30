@@ -72,6 +72,7 @@ const ProjectDetails = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
+  const [selectedRoomId, setSelectedRoomId] = useState(null);
 
   const { loading, error, data } = useQuery(GET_PROJECT, {
     variables: { id: projectId },
@@ -325,12 +326,15 @@ const ProjectDetails = () => {
               <Box sx={{ width: 300, borderRight: 1, borderColor: 'divider' }}>
                 <ChatRoomList
                   projectId={projectId}
-                  onRoomSelect={(roomId) => setActiveTab(3)} // Keep on chat tab
-                  selectedRoomId={null} // TODO: Add state for selected chat room
+                  onRoomSelect={(roomId) => {
+                    setSelectedRoomId(roomId);
+                    setActiveTab(3); // Keep on chat tab
+                  }}
+                  selectedRoomId={selectedRoomId}
                 />
               </Box>
               <Box sx={{ flex: 1 }}>
-                <ChatRoom roomId={null} /> {/* TODO: Pass selected room ID */}
+                <ChatRoom roomId={selectedRoomId} />
               </Box>
             </Box>
           )}

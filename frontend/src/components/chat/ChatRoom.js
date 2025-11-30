@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, gql } from '@apollo/client';
+import { useParams } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -80,6 +81,12 @@ const SEND_MESSAGE = gql`
   }
 `;
 
+const DELETE_MESSAGE = gql`
+  mutation DeleteMessage($messageId: ID!) {
+    deleteMessage(messageId: $messageId)
+  }
+`;
+
 const ChatRoom = ({ roomId }) => {
   const { user } = useAuth();
   const [messages, setMessages] = useState([]);
@@ -101,6 +108,7 @@ const ChatRoom = ({ roomId }) => {
   });
 
   const [sendMessage] = useMutation(SEND_MESSAGE);
+  const [deleteMessage] = useMutation(DELETE_MESSAGE);
 
   // Socket connection and message handling
   useEffect(() => {
@@ -235,9 +243,21 @@ const ChatRoom = ({ roomId }) => {
     handleMenuClose();
   };
 
-  const handleDeleteMessage = () => {
-    // TODO: Implement delete message mutation
-    console.log('Delete message:', selectedMessage?.id);
+  const handleDeleteMessage = async () => {
+    if (!selectedMessage) return;
+
+    try {
+      await deleteMessage({
+        variables: { messageId: selectedMessage.id }
+      });
+
+      // Remove the message from local state
+      setMessages(prev => prev.filter(msg => msg.id !== selectedMessage.id));
+    } catch (error) {
+      console.error('Failed to delete message:', error);
+      // TODO: Show error message to user
+    }
+
     handleMenuClose();
   };
 

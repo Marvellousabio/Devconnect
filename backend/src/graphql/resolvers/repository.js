@@ -1,4 +1,52 @@
 const { Repository, Project, User } = require('../../models');
+const https = require('https');
+
+// Helper function to fetch GitHub repository data
+function fetchGitHubRepo(owner, repo) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'api.github.com',
+      path: `/repos/${owner}/${repo}`,
+      method: 'GET',
+      headers: {
+        'User-Agent': 'DevConnect-App',
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        try {
+          if (res.statusCode === 200) {
+            const repoData = JSON.parse(data);
+            resolve(repoData);
+          } else {
+            reject(new Error(`GitHub API returned ${res.statusCode}: ${data}`));
+          }
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(error);
+    });
+
+    req.setTimeout(10000, () => {
+      req.destroy();
+      reject(new Error('Request timeout'));
+    });
+
+    req.end();
+  });
+}
 
 const repositoryResolvers = {
   Query: {
@@ -393,10 +441,43 @@ const repositoryResolvers = {
           throw new Error('Access denied');
         }
 
-        // TODO: Implement actual GitHub sync logic
-        // For now, just update the lastSync timestamp
-        repository.lastSync = new Date();
-        await repository.save();
+        // Check if repository has GitHub URL
+        if (!repository.githubUrl) {
+          throw new Error('Repository does not have a GitHub URL configured');
+        }
+
+        // Extract owner and repo name from GitHub URL
+        const urlMatch = repository.githubUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+        if (!urlMatch) {
+          throw new Error('Invalid GitHub URL format');
+        }
+
+        const [, githubOwner, githubRepo] = urlMatch;
+
+        try {
+          // Fetch repository data from GitHub API
+          const githubData = await fetchGitHubRepo(githubOwner, githubRepo);
+
+          // Update repository with GitHub data
+          repository.description = githubData.description || repository.description;
+          repository.language = githubData.language || repository.language;
+          repository.stars = githubData.stargazers_count || 0;
+          repository.forks = githubData.forks_count || 0;
+          repository.watchers = githubData.watchers_count || 0;
+          repository.license = githubData.license?.name || repository.license;
+          repository.topics = githubData.topics || repository.topics;
+          repository.visibility = githubData.private ? 'private' : 'public';
+          repository.defaultBranch = githubData.default_branch || repository.defaultBranch;
+          repository.lastSync = new Date();
+
+          await repository.save();
+
+        } catch (githubError) {
+          // If GitHub API fails, still update lastSync but don't fail the operation
+          console.warn('GitHub sync failed:', githubError.message);
+          repository.lastSync = new Date();
+          await repository.save();
+        }
 
         return await Repository.findById(id)
           .populate('project', 'name')

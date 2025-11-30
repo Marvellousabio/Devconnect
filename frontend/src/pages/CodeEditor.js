@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useMutation, gql } from '@apollo/client';
 import {
   Container,
   Box,
@@ -23,8 +24,20 @@ import {
 } from '@mui/icons-material';
 import CodeEditor from '../components/code/CodeEditor';
 
+const CREATE_CODE_SESSION = gql`
+  mutation CreateCodeSession($projectId: ID!, $input: CodeSessionInput!) {
+    createCodeSession(projectId: $projectId, input: $input) {
+      id
+      name
+      description
+      language
+    }
+  }
+`;
+
 const CodeEditorPage = () => {
   const { projectId, sessionId } = useParams();
+  const navigate = useNavigate();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newSession, setNewSession] = useState({
     name: '',
@@ -32,11 +45,31 @@ const CodeEditorPage = () => {
     language: 'javascript',
   });
 
-  const handleCreateSession = () => {
-    // TODO: Implement create session mutation
-    console.log('Create session:', newSession);
-    setCreateDialogOpen(false);
-    setNewSession({ name: '', description: '', language: 'javascript' });
+  const [createCodeSession, { loading: createLoading }] = useMutation(CREATE_CODE_SESSION);
+
+  const handleCreateSession = async () => {
+    try {
+      const { data } = await createCodeSession({
+        variables: {
+          projectId,
+          input: {
+            name: newSession.name,
+            description: newSession.description,
+            language: newSession.language,
+          }
+        }
+      });
+
+      // Navigate to the new session
+      navigate(`/projects/${projectId}/code/${data.createCodeSession.id}`);
+
+      // Reset form and close dialog
+      setCreateDialogOpen(false);
+      setNewSession({ name: '', description: '', language: 'javascript' });
+    } catch (error) {
+      console.error('Failed to create code session:', error);
+      // TODO: Show error message to user
+    }
   };
 
   const languages = [
@@ -156,8 +189,12 @@ const CodeEditorPage = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleCreateSession} variant="contained">
-            Create Session
+          <Button
+            onClick={handleCreateSession}
+            variant="contained"
+            disabled={createLoading || !newSession.name.trim()}
+          >
+            {createLoading ? 'Creating...' : 'Create Session'}
           </Button>
         </DialogActions>
       </Dialog>

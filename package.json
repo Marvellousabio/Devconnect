@@ -2,7 +2,7 @@
   "name": "devconnect",
   "version": "1.0.0",
   "description": "A collaborative development platform for teams",
-  "main": "index.js",
+  "main": "server.js",
   "workspaces": [
     "backend",
     "frontend"

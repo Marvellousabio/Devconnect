@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery, gql } from '@apollo/client';
+import { useQuery, useMutation, gql } from '@apollo/client';
 import {
   Box,
   Card,
@@ -64,6 +64,35 @@ const GET_ISSUES = gql`
   }
 `;
 
+const CREATE_ISSUE = gql`
+  mutation CreateIssue($projectId: ID!, $input: IssueInput!) {
+    createIssue(projectId: $projectId, input: $input) {
+      id
+      title
+      description
+      status
+      priority
+      labels
+      creator {
+        id
+        username
+        firstName
+        lastName
+        avatar
+      }
+      assignee {
+        id
+        username
+        firstName
+        lastName
+        avatar
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
 const IssueList = ({ projectId }) => {
   const [filters, setFilters] = useState({});
   const [sortBy, setSortBy] = useState('updatedAt');
@@ -82,6 +111,8 @@ const IssueList = ({ projectId }) => {
     variables: { projectId, filters },
     skip: !projectId,
   });
+
+  const [createIssue, { loading: createLoading }] = useMutation(CREATE_ISSUE);
 
   const handleFilterClick = (event) => {
     setFilterMenuAnchor(event.currentTarget);
@@ -123,6 +154,32 @@ const IssueList = ({ projectId }) => {
       setSortOrder('DESC');
     }
     handleSortClose();
+  };
+
+  const handleCreateIssue = async () => {
+    try {
+      await createIssue({
+        variables: {
+          projectId,
+          input: {
+            title: newIssue.title,
+            description: newIssue.description,
+            priority: newIssue.priority,
+            labels: newIssue.labels,
+          }
+        }
+      });
+
+      // Reset form and close dialog
+      setCreateDialogOpen(false);
+      setNewIssue({ title: '', description: '', priority: 'medium', labels: [] });
+
+      // Refetch issues to show the new one
+      refetch();
+    } catch (error) {
+      console.error('Failed to create issue:', error);
+      // TODO: Show error message to user
+    }
   };
 
   const getStatusColor = (status) => {
@@ -416,14 +473,11 @@ const IssueList = ({ projectId }) => {
         <DialogActions>
           <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
           <Button
-            onClick={() => {
-              // TODO: Implement create issue mutation
-              setCreateDialogOpen(false);
-              setNewIssue({ title: '', description: '', priority: 'medium', labels: [] });
-            }}
+            onClick={handleCreateIssue}
             variant="contained"
+            disabled={createLoading || !newIssue.title.trim()}
           >
-            Create Issue
+            {createLoading ? 'Creating...' : 'Create Issue'}
           </Button>
         </DialogActions>
       </Dialog>
