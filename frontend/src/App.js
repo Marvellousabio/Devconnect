@@ -17,6 +17,9 @@ import ProjectDetails from './pages/ProjectDetails';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 
+// Landing page
+import LandingPage from './landing';
+
 // Route protection components
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -42,7 +45,10 @@ function App() {
   return (
     <ErrorBoundary>
       <Routes>
-        {/* Public routes */}
+        {/* Public routes - Landing Page */}
+        <Route path="/" element={<LandingPage />} />
+        
+        {/* Public routes - Auth */}
         <Route
           path="/login"
           element={
@@ -62,22 +68,22 @@ function App() {
 
         {/* Protected routes */}
         <Route
-          path="/"
+          path="/app"
           element={
             <ProtectedRoute>
               <Layout />
             </ProtectedRoute>
           }
         >
-          <Route index element={<Navigate to="/dashboard" />} />
+          <Route index element={<Navigate to="/app/dashboard" />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="projects/:projectId" element={<ProjectDetails />} />
           <Route path="profile" element={<Profile />} />
           <Route path="settings" element={<Settings />} />
         </Route>
 
-        {/* Catch all route */}
-        <Route path="*" element={<Navigate to="/dashboard" />} />
+        {/* Catch all route - redirect to home */}
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </ErrorBoundary>
   );

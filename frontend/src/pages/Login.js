@@ -56,7 +56,7 @@ const Login = () => {
     onCompleted: (data) => {
       const { token, refreshToken, user } = data.login;
       login(token, refreshToken, user);
-      navigate('/dashboard');
+      navigate('/app/dashboard');
     },
     onError: (error) => {
       setLoginError(error.message || 'Login failed. Please try again.');

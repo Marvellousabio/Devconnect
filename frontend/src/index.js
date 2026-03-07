@@ -8,6 +8,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import App from './App';
 import client from './services/api';
 import { AuthProvider } from './context/AuthContext';
+import './landing/index.css';
 
 const theme = createTheme({
   palette: {

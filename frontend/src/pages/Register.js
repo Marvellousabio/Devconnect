@@ -61,7 +61,7 @@ const Register = () => {
     onCompleted: (data) => {
       const { token, refreshToken, user } = data.register;
       login(token, refreshToken, user);
-      navigate('/dashboard');
+      navigate('/app/dashboard');
     },
     onError: (error) => {
       setRegisterError(error.message || 'Registration failed. Please try again.');
