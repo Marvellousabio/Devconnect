@@ -1,4 +1,4 @@
-# DevConnect
+# DevConnect (Open source Project)
 
 A collaborative development platform that brings together developers, project management, issue tracking, real-time messaging, and code editing in one comprehensive tool.
 
